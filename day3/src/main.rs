@@ -70,13 +70,8 @@ fn common_bit(bits: &Vec<Vec<bool>>, c: usize) -> bool {
     let sum_bits = bits
         .iter()
         .map(|v| v[c])
-        .fold(0 as usize, |acc, u| acc + (u as usize)) as f64;
-    match sum_bits.partial_cmp(&(bits.len() as f64 / 2.0)) {
-        Some(std::cmp::Ordering::Less) => false,
-        Some(std::cmp::Ordering::Equal) => true,
-        Some(std::cmp::Ordering::Greater) => true,
-        _ => false,
-    }
+        .fold(0 as usize, |acc, u| acc + (u as usize));
+    sum_bits * 2 >= bits.len()
 }
 
 fn bits_to_usize(bits: &Vec<Vec<bool>>) -> usize {
