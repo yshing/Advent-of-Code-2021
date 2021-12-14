@@ -1,5 +1,6 @@
 use itertools::Itertools;
 use std::{collections::BTreeMap, fs};
+pub mod puzzle_dp;
 
 fn main() {
     let input = fs::read_to_string("input").unwrap();
@@ -20,17 +21,17 @@ fn puzzle_2(input: &str) -> usize {
 }
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone)]
-struct Puzzle<'a> {
+pub struct Puzzle<'a> {
     init: &'a str,
     instructions: BTreeMap<&'a str, char>,
     // computational state, alternative to solving by DP memoized fib like solution
-    // we can count pairs like counting fishes at day 6 
+    // we can count pairs like counting fishes at day 6
     pairs_count: BTreeMap<String, usize>,
     chars_count: BTreeMap<char, usize>,
 }
 
 impl<'a> Puzzle<'a> {
-    fn from_str(input: &'a str) -> Self {
+    pub fn from_str(input: &'a str) -> Self {
         let mut iter = input.trim().split("\n\n");
         let init = iter.next().unwrap();
         let mut puzzle = Puzzle {
@@ -60,8 +61,7 @@ impl<'a> Puzzle<'a> {
             });
         puzzle
     }
-    
-    fn step(&mut self, depth: usize) {
+    pub fn step(&mut self, depth: usize) {
         for _ in 0..depth {
             let p_counts = self.pairs_count.clone();
             for (pair, count) in &p_counts {
@@ -87,7 +87,7 @@ impl<'a> Puzzle<'a> {
         }
     }
 
-    fn score(&self) -> usize {
+    pub fn score(&self) -> usize {
         let sorted = self
             .chars_count
             .iter()

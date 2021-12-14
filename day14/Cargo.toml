@@ -1,5 +1,5 @@
 [package]
-name = "day13"
+name = "day14"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,3 +7,10 @@ edition = "2021"
 
 [dependencies]
 itertools = "0.10.3"
+
+[dev-dependencies]
+criterion = "0.3.5"
+
+[[bench]]
+name = "benchmark"
+harness = false
