@@ -1,10 +1,9 @@
+use itertools::Itertools;
 use std::{
     cmp::{max, min},
     collections::BTreeMap,
     fs,
 };
-
-use itertools::Itertools;
 
 fn main() {
     let input = fs::read_to_string("input").unwrap();
@@ -12,11 +11,17 @@ fn main() {
     dbg!(puzzle_2(&input));
 }
 
+macro_rules! sn {
+    ($l:expr) => {
+        SnailfishNumber::from_str($l)
+    };
+}
+
 fn puzzle_1(input: &str) -> i32 {
     input
         .trim()
         .lines()
-        .map(SnailfishNumber::from_str)
+        .map(|l| sn!(l))
         .reduce(|a, b| a + b)
         .unwrap()
         .magnitude()
@@ -24,11 +29,7 @@ fn puzzle_1(input: &str) -> i32 {
 
 fn puzzle_2(input: &str) -> i32 {
     let mut max_magnitude = 0;
-    let nums = input
-        .trim()
-        .lines()
-        .map(SnailfishNumber::from_str)
-        .collect_vec();
+    let nums = input.trim().lines().map(|l| sn!(l)).collect_vec();
     nums.clone().iter().for_each(|sn| {
         nums.iter().for_each(|sn2| {
             if sn != sn2 {
@@ -132,7 +133,7 @@ impl SnailfishNumber {
             let nums_temp = temp.numbers.clone();
             let nums = nums_temp
                 .iter()
-                .filter(|(add, n)| add.length() == max_depth)
+                .filter(|(add, _)| add.length() == max_depth)
                 .take(2)
                 .collect_vec();
             let add = nums[0].0.parent();
@@ -154,7 +155,7 @@ impl SnailfishNumber {
     fn reduce(&mut self) {
         loop {
             let mut ops = Ops::None;
-            for (add, n) in &self.numbers {
+            for (add, _) in &self.numbers {
                 if add.length() > 4 {
                     ops = Ops::Explode;
                     break;
@@ -186,13 +187,6 @@ impl SnailfishNumber {
             .reduce(max)
             .unwrap()
     }
-    fn max_value(&self) -> i32 {
-        self.numbers
-            .iter()
-            .map(|(_, value)| *value)
-            .reduce(max)
-            .unwrap()
-    }
     fn split(&mut self) {
         let snapshot = self.numbers.clone();
         snapshot
@@ -218,14 +212,14 @@ impl SnailfishNumber {
         self.numbers
             .iter_mut()
             .enumerate()
-            .for_each(|(index, (add, val))| {
+            .for_each(|(index, (_, val))| {
                 if index < exploding_pairs[0].0 && exploding_pairs[0].0 - index == 1 {
                     *val += exploding_pairs[0].1 .1
                 } else if index > exploding_pairs[1].0 && index - exploding_pairs[1].0 == 1 {
                     *val += exploding_pairs[1].1 .1
                 }
             });
-        exploding_pairs.iter().for_each(|(index, (add, _))| {
+        exploding_pairs.iter().for_each(|(_, (add, _))| {
             self.numbers.remove(add);
         });
         self.numbers
@@ -234,7 +228,7 @@ impl SnailfishNumber {
     }
 
     fn from_str(input: &str) -> SnailfishNumber {
-        let mut N = SnailfishNumber::default();
+        let mut new_number = SnailfishNumber::default();
         let iter = input.chars();
         let mut stack = Address { loc: Vec::new() };
         iter.for_each(|ch| match ch {
@@ -245,7 +239,8 @@ impl SnailfishNumber {
             },
 
             n if n.is_digit(10) => {
-                N.numbers
+                new_number
+                    .numbers
                     .entry(stack.clone())
                     .or_insert(n.to_digit(10).unwrap() as i32);
             }
@@ -259,7 +254,7 @@ impl SnailfishNumber {
             },
             x => panic!("Unexpected character {}", x),
         });
-        N
+        new_number
     }
 }
 
@@ -303,51 +298,49 @@ mod tests {
 
     #[test]
     fn explode_1() {
-        let mut sn = SnailfishNumber::from_str("[[[[[9,8],1],2],3],4]");
+        let mut sn = sn!("[[[[[9,8],1],2],3],4]");
         sn.explode();
         assert_eq!(format!("{}", sn), "[[[[0,9],2],3],4]")
     }
 
     #[test]
     fn explode_2() {
-        let mut sn = SnailfishNumber::from_str("[7,[6,[5,[4,[3,2]]]]]");
+        let mut sn = sn!("[7,[6,[5,[4,[3,2]]]]]");
         sn.explode();
         assert_eq!(format!("{}", sn), "[7,[6,[5,[7,0]]]]")
     }
 
     #[test]
     fn explode_3() {
-        let mut sn = SnailfishNumber::from_str("[[6,[5,[4,[3,2]]]],1]");
+        let mut sn = sn!("[[6,[5,[4,[3,2]]]],1]");
         sn.explode();
         assert_eq!(format!("{}", sn), "[[6,[5,[7,0]]],3]")
     }
     #[test]
     fn explode_4() {
-        let mut sn = SnailfishNumber::from_str("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]");
+        let mut sn = sn!("[[3,[2,[1,[7,3]]]],[6,[5,[4,[3,2]]]]]");
         sn.explode();
         assert_eq!(format!("{}", sn), "[[3,[2,[8,0]]],[9,[5,[4,[3,2]]]]]")
     }
     #[test]
     fn reduce() {
-        let mut sn = SnailfishNumber::from_str("[[[[4,3],4],4],[7,[[8,4],9]]]")
-            + SnailfishNumber::from_str("[1,1]");
+        let sn = sn!("[[[[4,3],4],4],[7,[[8,4],9]]]") + sn!("[1,1]");
         assert_eq!(format!("{}", sn), "[[[[0,7],4],[[7,8],[6,0]]],[8,1]]")
     }
     #[test]
     fn magnitude_1() {
-        let mut sn = SnailfishNumber::from_str("[[1,2],[[3,4],5]]");
+        let sn = sn!("[[1,2],[[3,4],5]]");
         assert_eq!(sn.magnitude(), 143)
     }
     #[test]
     fn magnitude_5() {
-        let mut sn =
-            SnailfishNumber::from_str("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
+        let sn = sn!("[[[[8,7],[7,7]],[[8,6],[7,7]]],[[[0,7],[6,6]],[8,7]]]");
         assert_eq!(sn.magnitude(), 3488)
     }
     #[test]
     fn add_1() {
-        let sn = SnailfishNumber::from_str("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
-            + SnailfishNumber::from_str("[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]");
+        let sn = sn!("[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]")
+            + sn!("[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]");
         assert_eq!(
             format!("{}", sn),
             "[[[[4,0],[5,4]],[[7,7],[6,0]]],[[8,[7,7]],[[7,9],[5,0]]]]"
@@ -359,13 +352,7 @@ mod tests {
         test_cases.trim().split("\n\n").for_each(|test| {
             let v = test.split("\n").collect_vec();
             dbg!(v[0], "+", v[1], "=", v[2]);
-            assert_eq!(
-                format!(
-                    "{}",
-                    SnailfishNumber::from_str(v[0]) + SnailfishNumber::from_str(v[1])
-                ),
-                v[2]
-            )
+            assert_eq!(format!("{}", sn!(v[0]) + sn!(v[1])), v[2])
         })
     }
 }
